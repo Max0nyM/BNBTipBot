@@ -4,8 +4,15 @@ import requests
 import telebot
 from telebot import types
 import logging
+import pymongo
 logger = telebot.logger
+from binance_chain.wallet import Wallet
+from binance_chain.environment import BinanceEnvironment
+
 #telebot.logger.setLevel(logging.DEBUG)
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["admin"]
+mycol = mydb["bnbtipbot"]
 
 TOKEN = '1287299690:AAHxBShPZa4D7Yz5HP6_x1Pe8WuU1HM5-cQ'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
@@ -47,7 +54,7 @@ def handle_message(message):
 
 @bot.message_handler(regexp="wt")
 def handle_message(message):
-	bot.reply_to(message, message)
+	bot.reply_to(message, message.from_user.id)
 
 ##########  Button Pallete  ##########
 @bot.message_handler(regexp="/start")
@@ -76,19 +83,31 @@ def handle_message(message):
 
 	bot.send_message(message.chat.id, wallet_text, reply_markup=myinline_markup)
 
-
 ###### CALL BACK QUERY HANDLER 
 @bot.callback_query_handler(func=lambda call: True)
 def callbackbnb_addr(call):
-	if call.data == "callbackbnb_addr":
-		print(call.data)
-
-	if call.data == "callbackbnb_bal":
-		print(call.data)
-
-        if call.data == "callbackbnb_pk":
-		print(call.data)
-
+	print(call);
+	d = str(call.data)
+	if d == "callbackbnb_addr":
+		testnet_env = BinanceEnvironment.get_testnet_env()
+		wallet = Wallet.create_random_wallet(env=testnet_env)
+		print(">>>>>>>> <<<<<<<<<")
+		print(wallet.address)
+		print(wallet.private_key) 
+		print("Hello")
+		findtelegram = { "telegram_id": call.from_user.id }
+		mydoc = mycol.find(findtelegram)
+		if mydoc.count() > 0:
+			for x in mydoc:
+				print(mydoc)
+			return
+		else:
+			myjsondata = { "telegram_id": call.from_user.id, "address": wallet.address, "privateKey": wallet.private_key }
+			x = mycol.insert_one(myjsondata)
+	if d == "callbackbnb_bal": 
+		print("Hi")
+	if d == "callbackbnb_pk": 
+		print("hola")
 
 ###### FOR ANY OTHER NONSENSE TEXT #####    DELETE  TEXT/CHAT TEXT ######## REMAIN
 @bot.message_handler()
