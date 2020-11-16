@@ -8,12 +8,11 @@ import pymongo
 logger = telebot.logger
 from binance_chain.wallet import Wallet
 from binance_chain.environment import BinanceEnvironment
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["bnbwalletsdb"]
+mycol = mydb["wallets"]
 
 #telebot.logger.setLevel(logging.DEBUG)
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-mydb = myclient["admin"]
-mycol = mydb["bnbtipbot"]
-
 TOKEN = '1287299690:AAHxBShPZa4D7Yz5HP6_x1Pe8WuU1HM5-cQ'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
@@ -70,8 +69,6 @@ def handle_message(message):
 	inline_markup.add(types.InlineKeyboardButton(text="Add MyTipBot to your Group", url="https://telegram.me/"+BOTNAME+"?startgroup=true"))
 	bot.send_message(message.chat.id, welcome_text1, reply_markup=inline_markup)
 
-
-
 @bot.message_handler(regexp="🏦 Wallet")
 def handle_message(message):
 	myinline_markup = types.InlineKeyboardMarkup()
@@ -80,30 +77,39 @@ def handle_message(message):
 		types.InlineKeyboardButton(text="💰 Balance", callback_data="callbackbnb_bal"),
 		types.InlineKeyboardButton(text="🔑 Private Key", callback_data="callbackbnb_pk")
 	)
-
 	bot.send_message(message.chat.id, wallet_text, reply_markup=myinline_markup)
+
 
 ###### CALL BACK QUERY HANDLER 
 @bot.callback_query_handler(func=lambda call: True)
 def callbackbnb_addr(call):
-	print(call);
+	#print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	p = call.message.json
+	chat_id = p["chat"]["id"]
+	#print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	d = str(call.data)
 	if d == "callbackbnb_addr":
 		testnet_env = BinanceEnvironment.get_testnet_env()
 		wallet = Wallet.create_random_wallet(env=testnet_env)
-		print(">>>>>>>> <<<<<<<<<")
-		print(wallet.address)
-		print(wallet.private_key) 
-		print("Hello")
+		print(wallet.ToJson())
+		#print(">>>>>>>>$$$$$$$<<<<<<<<<")
+		#print(wallet.address)
+		#print(wallet.private_key) 
+		#print("Hello")
 		findtelegram = { "telegram_id": call.from_user.id }
 		mydoc = mycol.find(findtelegram)
 		if mydoc.count() > 0:
 			for x in mydoc:
-				print(mydoc)
+				######print(x)
+				obj = {}
+				obj["address"] = x["address"]
+				######Send wallet  details to user
+				bot.send_message(chat_id, x["address"])
 			return
 		else:
 			myjsondata = { "telegram_id": call.from_user.id, "address": wallet.address, "privateKey": wallet.private_key }
 			x = mycol.insert_one(myjsondata)
+			bot.send_message(chat_id, wallet.address)
 	if d == "callbackbnb_bal": 
 		print("Hi")
 	if d == "callbackbnb_pk": 
