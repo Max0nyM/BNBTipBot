@@ -6,8 +6,12 @@ from telebot import types
 import logging
 import pymongo
 logger = telebot.logger
-from binance_chain.wallet import Wallet
-from binance_chain.environment import BinanceEnvironment
+#from binance_chain.wallet import Wallet
+#from binance_chain.environment import BinanceEnvironment
+
+from eth_wallet import Wallet
+from eth_wallet.utils import generate_entropy
+
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["bnbwalletsdb"]
 mycol = mydb["wallets"]
@@ -30,7 +34,7 @@ welcome_text1 ="""Click on the button below, choose the group and start tipping 
 
 wallet_text = """Binance DEX - BEP-20 BNB 
 
-Description
+                     Description
 Binance DEX refers to the decentralized exchange features developed on top of Binance Smart Chain.
 
 Links
@@ -89,13 +93,34 @@ def callbackbnb_addr(call):
 	#print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	d = str(call.data)
 	if d == "callbackbnb_addr":
-		testnet_env = BinanceEnvironment.get_testnet_env()
-		wallet = Wallet.create_random_wallet(env=testnet_env)
-		print(wallet.ToJson())
+		##testnet_env = BinanceEnvironment.get_testnet_env()
+		##wallet = Wallet.create_random_wallet(env=testnet_env)
+		##print(wallet.ToJson())
+		###########################
+		ENTROPY = generate_entropy(strength=128)
+		PASSPHRASE = str("5oM3P@ssw0rdqwertasdfzxcv")
+		# Choose language english, french, italian, spanish, chinese_simplified, chinese_traditional, japanese & korean
+		LANGUAGE = "english"  # default is english
+		wallet = Wallet()
+		wallet.from_entropy(entropy=ENTROPY, passphrase=PASSPHRASE, language=LANGUAGE)
+		# Derivation from path
+		# wallet.from_path("m/44'/60'/0'/0/0'")
+		# Or derivation from index
+		wallet.from_index(44, harden=True)
+		wallet.from_index(60, harden=True)
+		wallet.from_index(0, harden=True)
+		wallet.from_index(0)
+		wallet.from_index(0, harden=True)
+		w = wallet.dumps()
+		address = w["address"]
+		private_key = w["private_key"]
+		public_key = w["public_key"]
+		passphrase = w["passphrase"]
+		mnemonic = w["mnemonic"]
+		###########################
 		#print(">>>>>>>>$$$$$$$<<<<<<<<<")
 		#print(wallet.address)
 		#print(wallet.private_key) 
-		#print("Hello")
 		findtelegram = { "telegram_id": call.from_user.id }
 		mydoc = mycol.find(findtelegram)
 		if mydoc.count() > 0:
@@ -107,9 +132,9 @@ def callbackbnb_addr(call):
 				bot.send_message(chat_id, x["address"])
 			return
 		else:
-			myjsondata = { "telegram_id": call.from_user.id, "address": wallet.address, "privateKey": wallet.private_key }
+			myjsondata = { "telegram_id": call.from_user.id, "address": address, "privateKey": private_key, "mnemonic": mnemonic,"passphrase": passphrase }
 			x = mycol.insert_one(myjsondata)
-			bot.send_message(chat_id, wallet.address)
+			bot.send_message(chat_id, address)
 	if d == "callbackbnb_bal": 
 		print("Hi")
 	if d == "callbackbnb_pk": 
