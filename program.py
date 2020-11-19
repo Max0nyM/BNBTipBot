@@ -20,7 +20,32 @@ mycol = mydb["wallets"]
 TOKEN = '1287299690:AAHxBShPZa4D7Yz5HP6_x1Pe8WuU1HM5-cQ'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
-BOTNAME='MykurdishBot' 
+BOTNAME='MykurdishBot'
+
+ADDRESS_BTN_TEXT1=""" <a href="google.com">THIS IS TEXT</a>"""
+
+ADDRESS_BTN_TEXT="""*Address:* {MYADDRESS}
+
+*Receive Address:*
+{MYADDRESS}
+
+
+This is your public deposit address for each blockchain\.
+
+View on [https://bscscan\.org/]
+
+You can change the address on which you receive tips by using the 
+[\\wallet] command in private chat with the bot
+
+
+For example:
+[\/wallet  \<chain\>  \<address\>]
+[\/wallet  binance  {MYADDRESS}]
+
+If you want to change the receiving wallet back to your original 
+Tip bot wallet then use the [\/resetwallet \<chain\>] command in a
+private chat with the bot\."""
+
 
 welcome_text ="""Welcome to MyTipBot, a Telegram Tipper Bot for multiple blockchains. Click the Menu icon to get started.
 
@@ -49,6 +74,19 @@ Links
 #@bot.message_handler(func=lambda message: True)
 #def echo_all(message):
 #	bot.reply_to(message, message.text)
+
+
+myqrcodeinline_markup = types.InlineKeyboardMarkup()
+myqrcodeinline_markup.add(
+        types.InlineKeyboardButton(text="QR Code", callback_data="callbackbnb_addr")
+)
+myqrcodeinline_markup.add(
+        types.InlineKeyboardButton(text="🔤 Address", callback_data="callbackbnb_addr"),
+        types.InlineKeyboardButton(text="💰 Balance", callback_data="callbackbnb_bal"),
+        types.InlineKeyboardButton(text="🔑 Private Key", callback_data="callbackbnb_pk")
+)
+
+
 
 @bot.message_handler(regexp="HELP")
 def handle_message(message):
@@ -81,7 +119,7 @@ def handle_message(message):
 		types.InlineKeyboardButton(text="💰 Balance", callback_data="callbackbnb_bal"),
 		types.InlineKeyboardButton(text="🔑 Private Key", callback_data="callbackbnb_pk")
 	)
-	bot.send_message(message.chat.id, wallet_text, reply_markup=myinline_markup)
+	bot.send_message(chat_id=message.chat.id, text=wallet_text, reply_markup=myinline_markup)
 
 
 ###### CALL BACK QUERY HANDLER 
@@ -92,10 +130,8 @@ def callbackbnb_addr(call):
 	chat_id = p["chat"]["id"]
 	#print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 	d = str(call.data)
+	print(d)
 	if d == "callbackbnb_addr":
-		##testnet_env = BinanceEnvironment.get_testnet_env()
-		##wallet = Wallet.create_random_wallet(env=testnet_env)
-		##print(wallet.ToJson())
 		###########################
 		ENTROPY = generate_entropy(strength=128)
 		PASSPHRASE = str("5oM3P@ssw0rdqwertasdfzxcv")
@@ -117,24 +153,22 @@ def callbackbnb_addr(call):
 		public_key = w["public_key"]
 		passphrase = w["passphrase"]
 		mnemonic = w["mnemonic"]
-		###########################
-		#print(">>>>>>>>$$$$$$$<<<<<<<<<")
-		#print(wallet.address)
-		#print(wallet.private_key) 
+		########################### 
 		findtelegram = { "telegram_id": call.from_user.id }
 		mydoc = mycol.find(findtelegram)
 		if mydoc.count() > 0:
 			for x in mydoc:
-				######print(x)
-				obj = {}
-				obj["address"] = x["address"]
 				######Send wallet  details to user
-				bot.send_message(chat_id, x["address"])
+				z = ADDRESS_BTN_TEXT.format(MYADDRESS=x["address"])
+				#bot.send_message(chat_id, x["address"])
+				bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
 			return
 		else:
 			myjsondata = { "telegram_id": call.from_user.id, "address": address, "privateKey": private_key, "mnemonic": mnemonic,"passphrase": passphrase }
 			x = mycol.insert_one(myjsondata)
-			bot.send_message(chat_id, address)
+			z = ADDRESS_BTN_TEXT.format(MYADDRESS=str(address))
+			#bot.send_message(chat_id, address)
+			bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
 	if d == "callbackbnb_bal": 
 		print("Hi")
 	if d == "callbackbnb_pk": 
