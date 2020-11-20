@@ -7,6 +7,7 @@ import logging
 import pymongo
 from PIL import Image
 import qrcode
+import os
 logger = telebot.logger
 #from binance_chain.wallet import Wallet
 #from binance_chain.environment import BinanceEnvironment
@@ -171,21 +172,21 @@ def callbackbnb_addr(call):
 			z = ADDRESS_BTN_TEXT.format(MYADDRESS=str(address))
 			#bot.send_message(chat_id, address)
 			bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
-			qrimg = qrcode.QRCode(
-				version=1,				
-				error_correction=qrcode.constants.ERROR_CORRECT_L,
-				box_size=10,
-				border=4,
-			)	
-			qrimg.add_data(str(address))
-			qrimg.make(fit=True)
-			img = qr.make_image(fill_color="black", back_color="white")
+			try:				
+				qr = qrcode.QRCode(box_size=2)
+				qr.add_data(str(address))
+				qr.make()
+				img = qr.make_image()
+				filename = str(call.from_user.id)+".png"
+				img.save(filename)				
+			except Exception as e:
+				print(e)
 	if d == "callbackbnb_bal": 
 		print("Hi")
 	if d == "callbackbnb_pk": 
 		print("hola")
 	if d == "callbackbnb_qrcode":
-		myqrcodeimage = call.from_user.id+".png"				
+		myqrcodeimage = str(call.from_user.id)+".png"				
 		try:
 			photo = Image.open(myqrcodeimage)
 			bot.send_photo(chat_id, photo)
