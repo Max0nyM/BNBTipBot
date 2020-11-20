@@ -5,6 +5,8 @@ import telebot
 from telebot import types
 import logging
 import pymongo
+from PIL import Image
+import qrcode
 logger = telebot.logger
 #from binance_chain.wallet import Wallet
 #from binance_chain.environment import BinanceEnvironment
@@ -78,7 +80,7 @@ Links
 
 myqrcodeinline_markup = types.InlineKeyboardMarkup()
 myqrcodeinline_markup.add(
-        types.InlineKeyboardButton(text="QR Code", callback_data="callbackbnb_addr")
+        types.InlineKeyboardButton(text="QR Code", callback_data="callbackbnb_qrcode")
 )
 myqrcodeinline_markup.add(
         types.InlineKeyboardButton(text="🔤 Address", callback_data="callbackbnb_addr"),
@@ -169,10 +171,27 @@ def callbackbnb_addr(call):
 			z = ADDRESS_BTN_TEXT.format(MYADDRESS=str(address))
 			#bot.send_message(chat_id, address)
 			bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
+			qrimg = qrcode.QRCode(
+				version=1,				
+				error_correction=qrcode.constants.ERROR_CORRECT_L,
+				box_size=10,
+				border=4,
+			)	
+			qrimg.add_data(str(address))
+			qrimg.make(fit=True)
+			img = qr.make_image(fill_color="black", back_color="white")
 	if d == "callbackbnb_bal": 
 		print("Hi")
 	if d == "callbackbnb_pk": 
 		print("hola")
+	if d == "callbackbnb_qrcode":
+		myqrcodeimage = call.from_user.id+".png"				
+		try:
+			photo = Image.open(myqrcodeimage)
+			bot.send_photo(chat_id, photo)
+		except Exception as e:
+			print(e)
+
 
 ###### FOR ANY OTHER NONSENSE TEXT #####    DELETE  TEXT/CHAT TEXT ######## REMAIN
 @bot.message_handler()
