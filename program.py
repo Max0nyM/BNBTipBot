@@ -8,6 +8,7 @@ import pymongo
 from PIL import Image
 import qrcode
 import os
+import requests
 logger = telebot.logger
 #from binance_chain.wallet import Wallet
 #from binance_chain.environment import BinanceEnvironment
@@ -181,10 +182,19 @@ def callbackbnb_addr(call):
 				img.save(filename)				
 			except Exception as e:
 				print(e)
-	if d == "callbackbnb_bal": 
-		print("Hi")
+
+	if d == "callbackbnb_bal":
+		print("In if loop") 
+		foraddress = '0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E'
+		balanceurl = 'https://api-testnet.bscscan.com/api?module=account&action=balance&address=0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E&tag=latest'
+		print(balanceurl)
+		print("in try")
+		respo=requests.get('http://google.com')
+		print(respo)
+
 	if d == "callbackbnb_pk": 
 		print("hola")
+
 	if d == "callbackbnb_qrcode":
 		myqrcodeimage = str(call.from_user.id)+".png"				
 		try:
