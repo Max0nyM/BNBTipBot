@@ -111,8 +111,8 @@ async def getbalance(addr, chat_id):
 		response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
 		#print(response.text)
 		balanc = json.loads(response.text)
-		mybalanc = "<b>Balance:</b>"+str(balanc["result"])
-		bot.send_message(chat_id=chat_id, text=mybalanc)
+		mybalanc = "<b>Balance: </b>"+str(balanc["result"])
+		bot.send_message(chat_id=chat_id, text=mybalanc, parse_mode='HTML')
 		#print(">>>><<<<<>>>><<<<>>>><<<<>>>>")
 		####return response
 	except myexcept as e:
