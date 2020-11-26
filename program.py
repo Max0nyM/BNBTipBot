@@ -1,5 +1,7 @@
 import json
 import requests
+import string
+import random
 #### My Bot ###
 import telebot
 from telebot import types
@@ -7,8 +9,8 @@ import logging
 import pymongo
 from PIL import Image
 import qrcode
-import os
-import requests
+import asyncio
+
 logger = telebot.logger
 #from binance_chain.wallet import Wallet
 #from binance_chain.environment import BinanceEnvironment
@@ -90,6 +92,37 @@ myqrcodeinline_markup.add(
         types.InlineKeyboardButton(text="🔑 Private Key", callback_data="callbackbnb_pk")
 )
 
+async def getbalance(addr, chat_id):
+	try:
+		#print("ADDR")
+		#print(addr)
+		random_str1 = ''.join(random.choice(string.ascii_letters) for i in range(3))
+		random_str2 = ''.join(random.choice(string.ascii_letters) for i in range(15))
+		random_str3 = ''.join(random.choice(string.digits) for i  in range(3))
+		random_str4 = ''.join(random.choice(string.ascii_letters) for i in range(3))
+		print(">>>>")
+		random_str = random_str1+random_str2+random_str3+random_str4
+		print(random_str)
+		url = "https://api-testnet.bscscan.com/api"
+		querystring = {"module":"account","action":"balance","address":str(addr),"tag":"latest"}
+		payload = ""
+		headers = {'cache-control': "no-cache",'Postman-Token': str(random_str)}
+		#print(">>>")
+		response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
+		#print(response.text)
+		balanc = json.loads(response.text)
+		mybalanc = "<b>Balance:</b>"+str(balanc["result"])
+		bot.send_message(chat_id=chat_id, text=mybalanc)
+		#print(">>>><<<<<>>>><<<<>>>><<<<>>>>")
+		####return response
+	except myexcept as e:
+		print(e)
+
+def mydef(coroutine):
+	try:
+		coroutine.send(None)
+	except StopIteration as e:
+		return e.value
 
 
 @bot.message_handler(regexp="HELP")
@@ -173,30 +206,37 @@ def callbackbnb_addr(call):
 			z = ADDRESS_BTN_TEXT.format(MYADDRESS=str(address))
 			#bot.send_message(chat_id, address)
 			bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
-			try:				
+			try:
 				qr = qrcode.QRCode(box_size=2)
 				qr.add_data(str(address))
 				qr.make()
 				img = qr.make_image()
 				filename = str(call.from_user.id)+".png"
-				img.save(filename)				
+				img.save(filename)
 			except Exception as e:
 				print(e)
 
 	if d == "callbackbnb_bal":
-		print("In if loop") 
+		print("In if loop")
+		print(chat_id)
+		#getbalance.send(None)
 		foraddress = '0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E'
 		balanceurl = 'https://api-testnet.bscscan.com/api?module=account&action=balance&address=0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E&tag=latest'
-		print(balanceurl)
-		print("in try")
-		respo=requests.get('http://google.com')
-		print(respo)
+		mydef(getbalance(foraddress,chat_id))
+		print(">>><<>>><<@@@@@@>><>><<<>><<>>")
+		#try:
+		#print(balanceurl)
+		#print("in try")
+		#respo=requests.get(balanceurl)
+		#print(respo)
+		#except Exception as exp:
+		#	print(exp)
 
 	if d == "callbackbnb_pk": 
 		print("hola")
 
 	if d == "callbackbnb_qrcode":
-		myqrcodeimage = str(call.from_user.id)+".png"				
+		myqrcodeimage = str(call.from_user.id)+".png"
 		try:
 			photo = Image.open(myqrcodeimage)
 			bot.send_photo(chat_id, photo)
