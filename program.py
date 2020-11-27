@@ -96,25 +96,31 @@ async def getbalance(addr, chat_id):
 	try:
 		#print("ADDR")
 		#print(addr)
-		random_str1 = ''.join(random.choice(string.ascii_letters) for i in range(3))
-		random_str2 = ''.join(random.choice(string.ascii_letters) for i in range(15))
+		random_str1 = ''.join(random.choice(string.ascii_letters) for i in range(7))
+		random_str2 = ''.join(random.choice(string.ascii_letters) for i in range(14))
 		random_str3 = ''.join(random.choice(string.digits) for i  in range(3))
 		random_str4 = ''.join(random.choice(string.ascii_letters) for i in range(3))
 		print(">>>>")
-		random_str = random_str1+random_str2+random_str3+random_str4
-		print(random_str)
+		random_str = random_str1+"-"+random_str2+str(random_str3)+random_str4
+		#print(random_str)
 		url = "https://api-testnet.bscscan.com/api"
 		querystring = {"module":"account","action":"balance","address":str(addr),"tag":"latest"}
 		payload = ""
 		headers = {'cache-control': "no-cache",'Postman-Token': str(random_str)}
-		#print(">>>")
+		#print(">>>>>>#######<<<<<")
 		response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
-		#print(response.text)
+		print("############")
+		print(response.text)
 		balanc = json.loads(response.text)
-		mybalanc = "<b>Balance: </b>"+str(balanc["result"])
-		bot.send_message(chat_id=chat_id, text=mybalanc, parse_mode='HTML')
-		#print(">>>><<<<<>>>><<<<>>>><<<<>>>>")
-		####return response
+		if balanc["result"]:
+			mybalanc = "<b>Balance: (BNB) </b>"+str(int(balanc["result"])/1000000000000000000)
+			bot.send_message(chat_id=chat_id, text=mybalanc, parse_mode='HTML')
+			return
+		else:
+			bot.send_message(chat_id=chat_id, text="0", parse_mode='HTML')
+			return
+			#print(">>>><<<<<>>>><<<<>>>><<<<>>>>")
+			####return response
 	except myexcept as e:
 		print(e)
 
@@ -171,7 +177,13 @@ def callbackbnb_addr(call):
 	if d == "callbackbnb_addr":
 		###########################
 		ENTROPY = generate_entropy(strength=128)
-		PASSPHRASE = str("5oM3P@ssw0rdqwertasdfzxcv")
+		randomstr1 = ''.join(random.choice(string.digits) for i  in range(2))
+		randomstr2 = ''.join(random.choice(string.ascii_letters) for i in range(10))
+		randomstr4 = ''.join(random.choice(string.ascii_letters) for i in range(8))
+		randomstr3 = ''.join(random.choice(string.digits) for i in range(1))
+		PASSPHRASE = str(randomstr1)+str(randomstr2)+'@$'+str(randomstr4)+str(randomstr3)
+		#PASSPHRASE = str("5oM3P@ssw0rdqwertasdfzxcv")
+		#PASSPHRASE = str(pass_phrase)
 		# Choose language english, french, italian, spanish, chinese_simplified, chinese_traditional, japanese & korean
 		LANGUAGE = "english"  # default is english
 		wallet = Wallet()
@@ -185,6 +197,8 @@ def callbackbnb_addr(call):
 		wallet.from_index(0)
 		wallet.from_index(0, harden=True)
 		w = wallet.dumps()
+		# Print all wallet information's ----
+		###print(json.dumps(wallet.dumps()))
 		address = w["address"]
 		private_key = w["private_key"]
 		public_key = w["public_key"]
@@ -201,7 +215,7 @@ def callbackbnb_addr(call):
 				bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
 			return
 		else:
-			myjsondata = { "telegram_id": call.from_user.id, "address": address, "privateKey": private_key, "mnemonic": mnemonic,"passphrase": passphrase }
+			myjsondata = { "telegram_id": call.from_user.id, "address": address, "privateKey": private_key, "mnemonic": mnemonic,"passphrase": passphrase, "walletDetails": json.dumps(w) }
 			x = mycol.insert_one(myjsondata)
 			z = ADDRESS_BTN_TEXT.format(MYADDRESS=str(address))
 			#bot.send_message(chat_id, address)
@@ -217,23 +231,31 @@ def callbackbnb_addr(call):
 				print(e)
 
 	if d == "callbackbnb_bal":
-		print("In if loop")
-		print(chat_id)
+		##print("In if loop")
+		##print(chat_id)
 		#getbalance.send(None)
-		foraddress = '0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E'
-		balanceurl = 'https://api-testnet.bscscan.com/api?module=account&action=balance&address=0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E&tag=latest'
-		mydef(getbalance(foraddress,chat_id))
-		print(">>><<>>><<@@@@@@>><>><<<>><<>>")
-		#try:
-		#print(balanceurl)
-		#print("in try")
-		#respo=requests.get(balanceurl)
-		#print(respo)
-		#except Exception as exp:
-		#	print(exp)
+		findmyaddr = { "telegram_id": call.from_user.id }
+		mydoc = mycol.find(findmyaddr)
+		if mydoc.count() > 0:
+			for y in mydoc:
+				#foraddress = '0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E'
+				#balanceurl = 'https://api-testnet.bscscan.com/api?module=account&action=balance&address=0xBd32a2023C127EA99082Dd9B3044B2Bf61CFAe7E&tag=latest'
+				foraddress = y["address"]
+				mydef(getbalance(foraddress,chat_id))
+			return
+		##print(">>><<>>><<@@@@@@>><>><<<>><<>>")
 
 	if d == "callbackbnb_pk": 
-		print("hola")
+		##print("hola")
+		findtelegram = { "telegram_id": call.from_user.id }
+		mydoc = mycol.find(findtelegram)
+		if mydoc.count() > 0:
+			for x in mydoc:
+				######Send wallet Private Key details to user
+				z = str("<b>privateKey:</b>"+x["privateKey"])
+				bot.send_message(chat_id, z, parse_mode="HTML")
+			return
+
 
 	if d == "callbackbnb_qrcode":
 		myqrcodeimage = str(call.from_user.id)+".png"
