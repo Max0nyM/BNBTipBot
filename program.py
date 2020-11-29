@@ -11,6 +11,10 @@ from PIL import Image
 import qrcode
 import asyncio
 
+from web3 import Web3, EthereumTesterProvider
+w3 = Web3(EthereumTesterProvider)
+from eth_account import Account
+
 logger = telebot.logger
 #from binance_chain.wallet import Wallet
 #from binance_chain.environment import BinanceEnvironment
@@ -82,6 +86,9 @@ Links
 #	bot.reply_to(message, message.text)
 
 
+tipcurrency = ['BNB','BUSD','BTCB','ETH','SPX','DOT','CAKE','LINK','ALPHA','XRP','EOS','XVS','ADA','BAND','TWT','DAI','USDC','BURGER',
+'YFI','BCH','UNI','LTC','XTZ','CTK','CREAM','BAKE','ONT','FRIES','NAR','DRUGS','GUNS','NYA','SPARTA']
+
 myqrcodeinline_markup = types.InlineKeyboardMarkup()
 myqrcodeinline_markup.add(
         types.InlineKeyboardButton(text="QR Code", callback_data="callbackbnb_qrcode")
@@ -133,8 +140,45 @@ def mydef(coroutine):
 
 @bot.message_handler(regexp="HELP")
 def handle_message(message):
-	bot.reply_to(message, "HELP HERE") 
+	bot.reply_to(message, "HELP HERE")
 
+
+##### TIP user function
+def tipuser(cur,touser,amt):
+	print(cur)
+	print(touser)
+	print(amt)	
+	try:
+		rNum = ''.join(random.choice(string.digits) for i  in range(3))
+		nonceNum = int(rNum)
+		### get senderKey from Database here
+		senderKey = 'ad7e51ec3cbaae06e892698a7d09703e8c83676d07c237068d09b3ed37da1fe9'
+		#val = int(amt)
+		val = 1*1000000000000000000
+		#to = '0x1c28C63FF68D88cE245fCbf98d8ccE20C0620a71'
+		to = str(touser)
+		gas = 2000000
+		gasPrice = 23456789765
+		web3 = Web3(Web3.HTTPProvider('https://data-seed-prebsc-1-s1.binance.org:8545'))
+		#print(web3.eth.getBalance('0x8f1ABf8AF352C1A7aa55EB5fF3C56def94FEb849'))
+		tx = w3.eth.account.sign_transaction({'gasPrice':gasPrice,'gas':gas,'nonce':nonceNum,'to':to,'value':val},senderKey)
+		web3.eth.sendRawTransaction(tx.rawTransaction)
+	except Exception as exp:
+		print(exp)
+
+
+##### TIP User
+@bot.message_handler(regexp="/tip")
+def handle_message(message):
+	tip_text = message.text.split()
+	cur = message.text.split()[2]
+	touser = message.text.split()[1]
+	amt = message.text.split()[3]
+	#bot.reply_to(message, amt)
+	if cur in tipcurrency:
+		tipuser(cur,touser,amt)
+	else:
+		bot.reply_to(message,'We dont understad this currency')
 
 @bot.message_handler(regexp="wt")
 def handle_message(message):
