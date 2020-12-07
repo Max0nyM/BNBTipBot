@@ -128,7 +128,7 @@ async def getbalance(addr, chat_id):
 			return
 			#print(">>>><<<<<>>>><<<<>>>><<<<>>>>")
 			####return response
-	except myexcept as e:
+	except Exception as e:
 		print(e)
 
 def mydef(coroutine):
@@ -148,20 +148,26 @@ def tipuser(cur,touser,amt):
 	print(cur)
 	print(touser)
 	print(amt)	
-	try:
-		rNum = ''.join(random.choice(string.digits) for i  in range(3))
-		nonceNum = int(rNum)
+	try:	
 		### get senderKey from Database here
-		senderKey = 'ad7e51ec3cbaae06e892698a7d09703e8c83676d07c237068d09b3ed37da1fe9'
+		senderKey = '0fbfe4f1b50973d5717f2c896814c2843d6b5331a3fc938a68869e32b99bc76b'
 		#val = int(amt)
 		val = 1*1000000000000000000
 		#to = '0x1c28C63FF68D88cE245fCbf98d8ccE20C0620a71'
-		to = str(touser)
+		to = str(touser)		
 		gas = 2000000
-		gasPrice = 23456789765
-		web3 = Web3(Web3.HTTPProvider('https://data-seed-prebsc-1-s1.binance.org:8545'))
+		url = 'https://data-seed-prebsc-2-s1.binance.org:8545/'
+		web3 = Web3(Web3.HTTPProvider(url))
+		#web3 = Web3(Web3.HTTPProvider('https://data-seed-prebsc-1-s1.binance.org:8545'))
+		gasPrice = web3.eth.gasPrice
+		print(to)
+		nonce = web3.eth.getTransactionCount('0x15769Fdb70a2263bed8A36f9A53d2b0fF9b72563')	
+		print(nonce)
 		#print(web3.eth.getBalance('0x8f1ABf8AF352C1A7aa55EB5fF3C56def94FEb849'))
-		tx = w3.eth.account.sign_transaction({'gasPrice':gasPrice,'gas':gas,'nonce':nonceNum,'to':to,'value':val},senderKey)
+		#tx = w3.eth.account.sign_transaction({'gasPrice':gasPrice,'gas':gas,'nonce': nonceNum,'to':to,'value':val},senderKey)
+		#web3.eth.sendRawTransaction(tx.rawTransaction)
+		tx = web3.eth.account.sign_transaction(dict(gasPrice=gasPrice,gas=21000,nonce=nonce,to='0x15769Fdb70a2263bed8A36f9A53d2b0fF9b72563',value=123456789,data=b''), senderKey)
+		print(tx.rawTransaction)		
 		web3.eth.sendRawTransaction(tx.rawTransaction)
 	except Exception as exp:
 		print(exp)
@@ -169,16 +175,27 @@ def tipuser(cur,touser,amt):
 
 ##### TIP User
 @bot.message_handler(regexp="/tip")
-def handle_message(message):
+def handle_message(message):	
 	tip_text = message.text.split()
 	cur = message.text.split()[2]
-	touser = message.text.split()[1]
+	tousertxt = message.text.split()[1]
+	touser = tousertxt.split("@")[1]
 	amt = message.text.split()[3]
-	#bot.reply_to(message, amt)
-	if cur in tipcurrency:
-		tipuser(cur,touser,amt)
-	else:
-		bot.reply_to(message,'We dont understad this currency')
+	#print("###################################")
+	#print(len(tousertxt))
+	findtelegram = { "username": touser }
+	mydocumenta = mycol.find(findtelegram)
+	if mydocumenta.count() > 0:
+		for item in mydocumenta:			
+			transfertowallet = item["address"]
+			if cur in tipcurrency:
+				tipuser(cur, transfertowallet, amt)
+			else:
+				bot.reply_to(message,'Sorry! We don\'t understand this currency')
+		return
+
+	#print("###################################")	
+	#bot.reply_to(message, amt)	
 
 @bot.message_handler(regexp="wt")
 def handle_message(message):
@@ -248,7 +265,7 @@ def callbackbnb_addr(call):
 		public_key = w["public_key"]
 		passphrase = w["passphrase"]
 		mnemonic = w["mnemonic"]
-		########################### 
+		########################### 		
 		findtelegram = { "telegram_id": call.from_user.id }
 		mydoc = mycol.find(findtelegram)
 		if mydoc.count() > 0:
@@ -259,7 +276,7 @@ def callbackbnb_addr(call):
 				bot.send_message(chat_id=chat_id, text=z, parse_mode='MarkdownV2', reply_markup=myqrcodeinline_markup)
 			return
 		else:
-			myjsondata = { "telegram_id": call.from_user.id, "address": address, "privateKey": private_key, "mnemonic": mnemonic,"passphrase": passphrase, "walletDetails": json.dumps(w) }
+			myjsondata = { "telegram_id": call.from_user.id, "username": call.from_user.username, "address": address, "privateKey": private_key, "mnemonic": mnemonic,"passphrase": passphrase, "walletDetails": json.dumps(w) }
 			x = mycol.insert_one(myjsondata)
 			z = ADDRESS_BTN_TEXT.format(MYADDRESS=str(address))
 			#bot.send_message(chat_id, address)
